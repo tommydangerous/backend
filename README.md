@@ -9,22 +9,22 @@
 
 #### Build Image
 ```
-$ docker build -t users .
+$ docker build -t [tag_name] .
 ```
 
 #### Create Database
 ```
-$ docker run -e DB_HOST=[ip] -e DB_PORT=[port] -e DB_PASSWORD=[password] -e DB_USERNAME=[username] users bundle exec rake db:create RAILS_ENV=[environment]
+$ docker run -e DB_HOST=[ip] -e DB_PORT=[port] -e DB_PASSWORD=[password] -e DB_USERNAME=[username] [tag_name] bundle exec rake db:create RAILS_ENV=[environment]
 ```
 
 #### Migrate Database
 ```
-$ docker run -e DB_HOST=[ip] -e DB_PORT=[port] -e DB_PASSWORD=[password] -e DB_USERNAME=[username] users bundle exec rake db:migrate RAILS_ENV=[environment]
+$ docker run -e DB_HOST=[ip] -e DB_PORT=[port] -e DB_PASSWORD=[password] -e DB_USERNAME=[username] [tag_name] bundle exec rake db:migrate RAILS_ENV=[environment]
 ```
 
 #### Start Server
 ```
-$ docker run -d -p 8080:8080 -e DB_HOST=[ip] -e DB_PORT=[port] -e DB_PASSWORD=[password] -e DB_USERNAME=[username] --name users users
+$ docker run -d -p 8080:8080 -e DB_HOST=[ip] -e DB_PORT=[port] -e DB_PASSWORD=[password] -e DB_USERNAME=[username] --name app [tag_name]
 ```
 
 ## CoreOS Cloud Config
@@ -44,29 +44,29 @@ coreos:
       command: start
     - name: fleet.service
       command: start
-    - name: users.service
+    - name: app.service
       command: start
       content: |
         [Unit]
-        Description=Users App
+        Description=Ruby on Rails application w/ Unicorn
         After=docker.service
         Requires=docker.service
 
         [Service]
         User=core
         TimeoutStartSec=0
-        ExecStartPre=-/usr/bin/docker kill users
-        ExecStartPre=-/usr/bin/docker rm users
-        ExecStartPre=/usr/bin/docker pull dangerous/users
-        ExecStart=/usr/bin/docker run -e DB_HOST=[ip] -e DB_PORT=[port] -e DB_PASSWORD=[password] -e DB_USERNAME=[username] -p 8080:8080 --name users dangerous/users
-        ExecStop=/usr/bin/docker stop users
+        ExecStartPre=-/usr/bin/docker kill app
+        ExecStartPre=-/usr/bin/docker rm app
+        ExecStartPre=/usr/bin/docker pull [tag_name]
+        ExecStart=/usr/bin/docker run -e DB_HOST=[ip] -e DB_PORT=[port] -e DB_PASSWORD=[password] -e DB_USERNAME=[username] -p 8080:8080 --name app [tag_name]
+        ExecStop=/usr/bin/docker stop app
     - name: nginx.service
       command: start
       content: |
         [Unit]
-        Description=Users App
-        After=users.service
-        Requires=users.service
+        Description=Nginx w/ linking to Ruby on Rails & Unicorn container
+        After=app.service
+        Requires=app.service
 
         [Service]
         User=core
@@ -74,6 +74,6 @@ coreos:
         ExecStartPre=-/usr/bin/docker kill nginx-unicorn
         ExecStartPre=-/usr/bin/docker rm nginx-unicorn
         ExecStartPre=/usr/bin/docker pull dangerous/nginx-unicorn
-        ExecStart=/usr/bin/docker run -p 80:80 --link users:app --name nginx-unicorn dangerous/nginx-unicorn
+        ExecStart=/usr/bin/docker run -p 80:80 --link app:app --name nginx-unicorn dangerous/nginx-unicorn
         ExecStop=/usr/bin/docker stop nginx-unicorn
 ```
