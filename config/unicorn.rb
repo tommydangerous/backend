@@ -1,7 +1,7 @@
 app_name = ENV["APP_NAME"]
 
 app_dir    = File.expand_path "../../", __FILE__
-shared_dir = File.expand_path "../../../shared/", __FILE__
+# shared_dir = File.expand_path "../../../shared/", __FILE__
 
 working_directory app_dir
 
@@ -9,14 +9,14 @@ worker_processes 3
 preload_app true # Load the app into master before forking workers
 timeout 30 # Restart any workers that haven't responded in 30 seconds
 
+stderr_path "#{app_dir}/log/unicorn.log"
+stdout_path "#{app_dir}/log/unicorn.log"
+
 # Listen on a Unix data socket
-# listen "#{shared_dir}/sockets/unicorn.sock", backlog: 64
-listen "127.0.0.1:8080"
+listen "#{app_dir}/tmp/sockets/unicorn.sock", backlog: 64
+# listen "127.0.0.1:8080"
 
-stderr_path "#{shared_dir}/log/unicorn.log"
-stdout_path "#{shared_dir}/log/unicorn.log"
-
-pid "#{shared_dir}/pids/unicorn.pid"
+# pid "#{app_dir}/tmp/pids/unicorn.pid"
 
 before_exec do |server|
   # ENV["BUNDLE_GEMFILE"] = "#{app_dir}/Gemfile"
